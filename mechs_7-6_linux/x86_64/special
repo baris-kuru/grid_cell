@@ -1,0 +1,13 @@
+#!/bin/sh
+if test "x${NRNHOME}" = "x" ; then
+    NRNHOME="/home/baris/anaconda3/lib/python3.7/site-packages/neuron/.data"
+fi
+if test "x${NRNBIN}" = "x" ; then
+    NRNBIN="/home/baris/anaconda3/bin"
+fi
+if test "" = "yes" ; then
+    NRNIV="${NRNBIN}/nrniv.app/Contents/MacOS/nrniv"
+else
+    NRNIV="${NRNBIN}/nrniv"
+fi
+"${NRNIV}" -dll "/home/baris/Pyhton/mechs_7-6_linux/x86_64/.libs/libnrnmech.so" "$@"
