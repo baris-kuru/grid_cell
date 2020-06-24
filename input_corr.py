@@ -34,12 +34,26 @@ field_size_cm = 100 #size of the field in real life
 speed_cm = 20 # speed of the virtual mouse
 dur_ms = (field_size_cm/speed_cm)*1000
 dur_ms = 5000
-n_traj = 4 # n_traj trajectories are produced for parallel and sloping individually
+par_trajs = np.array([75,74.5,74,73,72,70,67,64,60,56,52,48,43,37,32,26,20,13])
+n_traj = par_trajs.shape[0]
+max_rate = 20
+
+# def difference_matrix(a):
+#     x = np.reshape(a, (len(a), 1))
+#     return x - x.transpose()
+# diff_matrix = difference_matrix(par_trajs)
+# iu = np.triu_indices(diff_matrix.shape[0], k=1)
+# diff_matrix = np.sort(diff_matrix[iu])
+#     # corr arr is the values vectorized 
+#     diag_low = corr_mat[iu]
+# plt.imshow(diff_matrix)
+# plt.colorbar()
+
 
 
 np.random.seed(seed_1) #seed_1 for granule cell generation
-grids = grid_population(n_grid, 20, seed_1)[0]
-par_traj, par_idc_cm, dur_ms, dt_s = draw_traj(grids, n_grid, n_traj)
+grids = grid_population(n_grid, max_rate, seed_1)[0]
+par_traj, par_idc_cm, dur_ms, dt_s = draw_traj(grids, n_grid, par_trajs)
 
 
 # generate temporal patterns out of grid cell act profiles as an input for pyDentate
