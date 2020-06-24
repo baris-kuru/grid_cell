@@ -85,9 +85,9 @@ for i in arr:
 plt.legend(counts_ms[arr], title='Bin Size(ms)')
         
 plt.title('Distributions of Input Correlations for Various Number of Grids')
-parameters = ('number of grids='+str(n_grid)+ '      parallel trajs cm='+str(par_trajs)+'      max rate='+str(max_rate)+
+parameters = ('number of grids = '+str(n_grid)+ '      parallel trajs = '+str(par_trajs)+' cm      max rate = '+str(max_rate)+
               '       seed1='+str(seed_1)+', seed2='+str(seed_2s)+', seed3='+str(seed_3))
-plt.annotate(parameters, (0,0), (0, -50), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=14)
+plt.annotate(parameters, (0,0), (0, -60), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=13)
 plt.xlabel('Rin')
 plt.ylabel('Count')
 
