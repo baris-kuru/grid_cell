@@ -33,6 +33,7 @@ def inhom_poiss(arr, n_traj, dt_s=0.0001, speed_cm = 20, field_size_cm = 100, se
     #go through each rate profile or each cell for variable trajectory
     for grid_idc in range(n_cells):
         for i in range(n_traj):
+            np.random.seed(seed+grid_idc)
             rate_profile = arr[grid_idc,:,i]
             #produce analig signal out of rate profiles
             asig = AnalogSignal(rate_profile,
