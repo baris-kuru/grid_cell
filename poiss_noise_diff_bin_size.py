@@ -64,7 +64,7 @@ for idx, value in np.ndenumerate(counts):
     counts[idx] = ct_a_bin(inputs[idx[1]], bins_ms[idx[0]])
     
 
-poiss_noise = np.empty(9, np.ndarray)
+poiss_noise = np.empty(5, np.ndarray)
 
 for idx, poiss in enumerate(poiss_noise):
     poiss_noise[idx] = np.concatenate((pearson_r(counts[idx,0], counts[idx,1])[0],
@@ -74,7 +74,7 @@ for idx, poiss in enumerate(poiss_noise):
                                        pearson_r(counts[idx,1], counts[idx,3])[0],
                                        pearson_r(counts[idx,2], counts[idx,3])[0]),  axis=None)
     
-
+import matplotlib.font_manager #for linux
 'Plotting'
 sns.set(context='paper',style='whitegrid',palette='colorblind', font='Arial',font_scale=1.5,color_codes=True)
 plt.figure()
@@ -87,7 +87,7 @@ plt.legend(counts_ms[arr], title='Bin Size(ms)')
 plt.title('Distributions of Input Correlations for Various Number of Grids')
 parameters = ('number of grids = '+str(n_grid)+ '      parallel trajs = '+str(par_trajs)+' cm      max rate = '+str(max_rate)+
               '       seed1='+str(seed_1)+', seed2='+str(seed_2s)+', seed3='+str(seed_3))
-plt.annotate(parameters, (0,0), (0, -60), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=13)
+plt.annotate(parameters, (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=9)
 plt.xlabel('Rin')
 plt.ylabel('Count')
 

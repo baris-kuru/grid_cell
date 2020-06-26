@@ -55,7 +55,7 @@ for idx, val in np.ndenumerate(counts):
     counts[idx] = ct_a_bin(inhom_poiss(par_trajs_pf[idx[0]], n_traj, dt_s=0.0001, seed=seed_2s[idx[1]]), [2000,2500])
 
 
-poiss_noise = np.empty(10, np.ndarray)
+poiss_noise = np.empty(5, np.ndarray)
 
 for idx, poiss in enumerate(poiss_noise):
     poiss_noise[idx] = np.concatenate((pearson_r(counts[idx,0], counts[idx,1])[0],
@@ -77,7 +77,7 @@ plt.legend(max_rates[arr], title='Max Rates (Hz)')
 
 parameters = ('number of grids = '+str(n_grid)+'      parallel trajs= '+str(par_trajs)+' cm       bin size = 500 ms'+
               '       seed1='+str(seed_1)+', seed2='+str(seed_2s)+', seed3='+str(seed_3))
-plt.annotate(parameters, (0,0), (0, -60), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=13)
+plt.annotate(parameters, (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=9)
 
 plt.title('Distributions of Input Correlations for Various Max Rates')
 
