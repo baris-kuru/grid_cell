@@ -84,7 +84,7 @@ def draw_traj(all_grids ,n_grid, par_trajs, arr_size=200, field_size_cm=100, spe
     n_traj = par_idc.shape[0]
     #empty arrays
     traj = np.empty((n_grid,arr_size))
-    par_traj = np.empty((n_grid,arr_size,n_grid))
+    par_traj = np.empty((n_grid,arr_size,n_traj))
     
     #draw the trajectories
     for j in range(n_traj):
