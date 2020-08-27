@@ -317,8 +317,8 @@ axes1[1,1].imshow()
 
 
 fig1.colorbar(im1,im2,im3,im4)
-fig1.colorbar(im1
-             fig1.colorbar(im1
+# fig1.colorbar(im1
+#               fig1.colorbar(im1
 
 fig1, axes1 = plt.subplots(2,2,figsize=(45,20))
 plt.setp(axes1, xticks=np.arange(10), xticklabels=xtick_500, 

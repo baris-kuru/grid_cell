@@ -43,6 +43,7 @@ counts = ct_a_bin(input_spikes, [2000,2500])
 
 np.savez('data_for_perceptron.npz', par_trajs_pf=par_trajs_pf, input_spikes=input_spikes, counts=counts )
 
+
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
