@@ -61,11 +61,6 @@ counts = binned_ct(poiss_spikes[0], 100, time_ms=dur_ms)
 
 
 
-np.random.seed(seed_1) #seed_1 for granule cell generation
-grids = grid_population(n_grid, max_rate, seed_1)
-
-input_spikes = inhom_poiss(par_trajs_pf, n_traj, dt_s=0.0001, seed=seed_2)
-counts = ct_a_bin(input_spikes, [2000,2500])
 
 np.savez('data_for_perceptron.npz', par_trajs_pf=par_trajs_pf, input_spikes=input_spikes, counts=counts )
 

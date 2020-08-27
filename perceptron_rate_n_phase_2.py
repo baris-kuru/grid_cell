@@ -84,19 +84,19 @@ traj_size_cm = dur_s*speed_cm
 
 
 
-def spike_ct(par_trajs):
+def spike_ct(trajs_pf):
 
     seed_2s = np.arange(200,205,1)
-    n_traj = par_trajs.shape[0]
+    n_traj = 2
     poiss_spikes = []
-    counts_750 = np.empty((len(seed_2s), n_bin*n_grid))
-    counts_745 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_1 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_2 = np.empty((len(seed_2s), n_bin*n_grid))
     for idx, seed_2 in enumerate(seed_2s):
-        curr_spikes = inhom_poiss(par_trajs_pf, n_traj, seed=seed_2, dt_s=dt_s, traj_size_cm=traj_size_cm)
+        curr_spikes = inhom_poiss(trajs_pf, n_traj, seed=seed_2, dt_s=dt_s, traj_size_cm=traj_size_cm)
         poiss_spikes.append(curr_spikes)
-        counts_750[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
-        counts_745[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
-    counts = np.vstack((counts_750, counts_745))
+        counts_1[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
+        counts_2[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
+    counts = np.vstack((counts_1, counts_2))
     return counts
 
 
@@ -120,10 +120,15 @@ th_cross_diff = []
 for idx, seed_4 in enumerate(seed_4s):
     
     grids = grid_population(n_grid, max_rate, seed=seed_1s[idx], arr_size=200)
-    par_trajs_pf, dt_s = draw_traj(grids, n_grid, par_trajs, arr_size=200, field_size_cm = field_size_cm, dur_ms=dur_ms, speed_cm=speed_cm)
+    
+    sim_traj = np.array([75, 74.5])
+    diff_traj = np.array([75, 60])
+    
+    sim_trajs_pf, dt_s = draw_traj(grids, n_grid, sim_traj, arr_size=200, field_size_cm = field_size_cm, dur_ms=dur_ms, speed_cm=speed_cm)
+    diff_trajs_pf, dt_s = draw_traj(grids, n_grid, diff_traj, arr_size=200, field_size_cm = field_size_cm, dur_ms=dur_ms, speed_cm=speed_cm)
 
-    sim_traj_cts = spike_ct(np.array([75, 74.5]))
-    diff_traj_cts = spike_ct(np.array([75, 60]))
+    sim_traj_cts = spike_ct(sim_trajs_pf)
+    diff_traj_cts = spike_ct(diff_trajs_pf)
     
     data_sim = torch.FloatTensor(sim_traj_cts)
     data_diff = torch.FloatTensor(diff_traj_cts)
