@@ -84,54 +84,55 @@ traj_size_cm = dur_s*speed_cm
 
 
 
-def spike_ct(par_trajs):
-    seed_1s = np.arange(100,105,1)
+def spike_ct(trajs_pf):
+
     seed_2s = np.arange(200,205,1)
-    n_traj = par_trajs.shape[0]
+    n_traj = 2
     poiss_spikes = []
-    counts_750 = np.empty((len(seed_2s), n_bin*n_grid))
-    counts_745 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_1 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_2 = np.empty((len(seed_2s), n_bin*n_grid))
     for idx, seed_2 in enumerate(seed_2s):
-        grids = grid_population(n_grid, max_rate, seed=seed_1s[idx], arr_size=200)
-        par_trajs_pf, dt_s = draw_traj(grids, n_grid, par_trajs, arr_size=200, field_size_cm = field_size_cm, dur_ms=dur_ms, speed_cm=speed_cm)
-        curr_spikes = inhom_poiss(par_trajs_pf, n_traj, seed=seed_2, dt_s=dt_s, traj_size_cm=traj_size_cm)
+        curr_spikes = inhom_poiss(trajs_pf, n_traj, seed=seed_2, dt_s=dt_s, traj_size_cm=traj_size_cm)
         poiss_spikes.append(curr_spikes)
-        counts_750[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
-        counts_745[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
-    counts = np.vstack((counts_750, counts_745))
+        counts_1[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
+        counts_2[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
+    counts = np.vstack((counts_1, counts_2))
     return counts
 
 
-sim_traj_cts = spike_ct(np.array([75, 74.5]))
-diff_traj_cts = spike_ct(np.array([75, 60]))
 
-data_sim = torch.FloatTensor(sim_traj_cts)
-data_diff = torch.FloatTensor(diff_traj_cts)
-labels = torch.FloatTensor([[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],
-                            [0, 1],[0, 1],[0, 1],[0, 1],[0, 1]]) 
+
+
 
 lr = 1e-3
 n_iter = 200
 seed_4s = [0,1,2,3,4,5,6,7,8,9]
 plt.figure()
-plt.title('Learning in Epochs for Similar and Distinct Trajectories\n diff grid seed for each diff poiss seed \n10 diff torch seeds, learning rate = '+str(lr))
+plt.title('Perceptron Learning in Epochs for Similar and Distinct Trajectories\n diff grid seed for each torch seed  \n diff-multip poiss seeds of one couple of grid-torch seeds , learning rate = '+str(lr))
 plt.xlabel('Epochs')
 plt.ylabel('RMSE Loss')
 
 
-th_cross_sim = []
-for seed_4 in seed_4s:
-    torch.manual_seed(seed_4)
-    net_sim = Net(4000,2)
-    train_loss_sim, out_sim = train_net(net_sim, data_sim, labels, n_iter=n_iter, lr=lr)
-    th_cross_sim.append(np.argmax(np.array(train_loss_sim) < 0.2))
-    if seed_4 == seed_4s[0]:
-        plt.plot(train_loss_sim, 'b-', label='75cm vs 74.5cm')
-    else:
-        plt.plot(train_loss_sim, 'b-')
+seed_1s = np.arange(100,110,1)
 
+th_cross_sim = []
 th_cross_diff = []
-for seed_4 in seed_4s:
+for idx, seed_4 in enumerate(seed_4s):
+    
+    grids = grid_population(n_grid, max_rate, seed=seed_1s[idx], arr_size=200)
+    
+
+    diff_traj = np.array([75, 60])
+
+    diff_trajs_pf, dt_s = draw_traj(grids, n_grid, diff_traj, arr_size=200, field_size_cm = field_size_cm, dur_ms=dur_ms, speed_cm=speed_cm)
+
+    diff_traj_cts = spike_ct(diff_trajs_pf)
+    
+    data_diff = torch.FloatTensor(diff_traj_cts)
+    labels = torch.FloatTensor([[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],
+                                [0, 1],[0, 1],[0, 1],[0, 1],[0, 1]])
+    np.random.shuffle(labels)
+
     torch.manual_seed(seed_4)
     net_diff = Net(4000,2)
     train_loss_diff, out_diff = train_net(net_diff, data_diff, labels, n_iter=n_iter, lr=lr)

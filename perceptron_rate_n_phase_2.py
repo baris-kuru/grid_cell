@@ -108,7 +108,7 @@ lr = 1e-3
 n_iter = 200
 seed_4s = [0,1,2,3,4,5,6,7,8,9]
 plt.figure()
-plt.title('Perceptron Learning in Epochs for Similar and Distinct Trajectories\n 10 diff torch seeds, learning rate = '+str(lr))
+plt.title('Perceptron Learning in Epochs for Similar and Distinct Trajectories\n diff grid seed for each torch seed  \n diff-multip poiss seeds of one couple of grid-torch seeds , learning rate = '+str(lr))
 plt.xlabel('Epochs')
 plt.ylabel('RMSE Loss')
 
@@ -153,5 +153,8 @@ for idx, seed_4 in enumerate(seed_4s):
         plt.plot(train_loss_diff, 'r-')
     
 plt.legend()
+
+plt.annotate(str(th_cross_sim)+'\n'+str(th_cross_diff), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=9)
+
 
 print(list(net_diff.parameters())[0])

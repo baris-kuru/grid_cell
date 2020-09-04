@@ -67,7 +67,7 @@ def grid_population(n_grid, max_rate, seed, arr_size=200):
         arr = grid_maker(grid_spc[i], grid_ori[i], [x, y], arr_size, [1,1], max_rate)
         all_grids[:, :, i] = arr
     
-    return all_grids    
+    return all_grids, grid_spc
 
 def draw_traj(all_grids ,n_grid, par_trajs, arr_size=200, field_size_cm = 100, dur_ms=5000, speed_cm=20):
     "Activation profile of cells out of trajectories walked by a mouse" 
