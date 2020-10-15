@@ -74,8 +74,8 @@ def draw_traj(all_grids ,n_grid, par_trajs, arr_size=200, field_size_cm = 100, d
     
     all_grids = all_grids
     size2cm = int(arr_size/field_size_cm)
-    dur_s = int(dur_ms/1000)
-    traj_len_cm = dur_s*speed_cm
+    dur_s = dur_ms/1000
+    traj_len_cm = int(dur_s*speed_cm)
     traj_len_dp = traj_len_cm*size2cm
     dt_s = (dur_s)/traj_len_cm #for parallel one
     par_idc_cm = par_trajs

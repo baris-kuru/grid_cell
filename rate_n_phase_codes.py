@@ -16,20 +16,21 @@ from neo.core import AnalogSignal
 import quantities as pq
 import os
 
+from neuron import h, gui  # gui necessary for some parameters to h namespace
+import net_tunedrev
+import scipy.stats as stats
+
+
 savedir = os.getcwd()
 n_grid = 200 
+n_granule = 2000
 max_rate = 20
-seed = 100
 field_size_m = 1
 field_size_cm = field_size_m*100
 arr_size = 200
-dur_ms = 2000
 bin_size = 100
-n_bin = int(dur_ms/bin_size)
-dur_s = int(dur_ms/1000)
 speed_cm = 20
 field_size_cm = 100
-traj_size_cm = dur_s*speed_cm
 def_dt_s = 0.025
 new_dt_s = 0.002
 dt_s = new_dt_s
@@ -62,14 +63,14 @@ def interp(arr, dur_s, dt_s, new_dt_s):
 
 
 
-def inhom_poiss(arr, n_traj, seed_2=0, dt_s=0.025):
+def inhom_poiss(arr, n_traj, dur_s, seed_2=0, dt_s=0.025):
     #length of the trajectory that mouse went
     np.random.seed(seed_2)
     n_cells = arr.shape[0]
     spi_arr = np.empty((n_cells, n_traj), dtype = np.ndarray)
     for grid_idc in range(n_cells):
         for i in range(n_traj):
-            np.random.seed(seed+grid_idc)
+            np.random.seed(seed_2+grid_idc)
             rate_profile = arr[grid_idc,:,i]
             asig = AnalogSignal(rate_profile,
                                     units=1*pq.Hz,
@@ -112,25 +113,34 @@ def binned_ct(arr, bin_size_ms, dt_ms=25, time_ms=5000):
     return counts
 
 
-def spike_ct(trajs_pf):
-
+def spike_ct(trajs_pf, dur_ms):
+    n_bin = int(dur_ms/bin_size)
+    dur_s = dur_ms/1000
     seed_2s = np.arange(200,205,1)
     n_traj = 2
-    poiss_spikes = []
-    counts_1 = np.empty((len(seed_2s), n_bin*n_grid))
-    counts_2 = np.empty((len(seed_2s), n_bin*n_grid))
+    grid_spikes = []
+    granule_spikes = []
+    counts_grid_1 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_grid_2 = np.empty((len(seed_2s), n_bin*n_grid))
+    counts_gra_1 = np.empty((len(seed_2s), n_bin*n_granule))
+    counts_gra_2 = np.empty((len(seed_2s), n_bin*n_granule))
     for idx, seed_2 in enumerate(seed_2s):
-        curr_spikes = inhom_poiss(trajs_pf, n_traj, seed_2=seed_2, dt_s=dt_s)
-        poiss_spikes.append(curr_spikes)
-        counts_1[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
-        counts_2[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
-    counts = np.vstack((counts_1, counts_2))
-    return counts
+        curr_spikes = inhom_poiss(trajs_pf, n_traj, dur_s, seed_2=seed_2, dt_s=dt_s)
+        granule_out = pyDentate(curr_spikes, seed_2, n_traj, dur_ms)
+        grid_spikes.append(curr_spikes)
+        granule_spikes.append(granule_out)
+        counts_grid_1[idx, :] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,0].flatten()
+        counts_grid_2[idx,:] = binned_ct(curr_spikes, bin_size, time_ms=dur_ms)[:,:,1].flatten()
+        counts_gra_1[idx, :] = binned_ct(granule_out, bin_size, time_ms=dur_ms)[:,:,0].flatten()
+        counts_gra_2[idx,:] = binned_ct(granule_out, bin_size, time_ms=dur_ms)[:,:,1].flatten()
+    counts_grid = np.vstack((counts_grid_1, counts_grid_2))
+    counts_granule = np.vstack((counts_gra_1, counts_gra_2))
+    return counts_grid, counts_granule, grid_spikes, granule_spikes
 
 
 
-def phase_code(trajs, seed_1, seed_2s, f=10, shift_deg=240):
-
+def phase_code(trajs, dur_ms, seed_1, seed_2s, f=10, shift_deg=240):
+    dur_s = dur_ms/1000
     T = 1/f
     time_bin_size = T
     times = np.arange(0, dur_s+time_bin_size, time_bin_size) 
@@ -168,15 +178,141 @@ def phase_code(trajs, seed_1, seed_2s, f=10, shift_deg=240):
     factor = 75
     overall_dir = phase_code_dir*rate_trajs*factor
     
-    phases_1 = np.empty((len(seed_2s), n_bin*n_grid))
-    phases_2 = np.empty((len(seed_2s), n_bin*n_grid))
+    phases_1 = np.empty((len(seed_2s), n_time_bins*n_grid))
+    phases_2 = np.empty((len(seed_2s), n_time_bins*n_grid))
     for idx, seed_2 in enumerate(seed_2s):
-        spikes = inhom_poiss(overall_dir, 2, dt_s=dt_s, seed_2=seed_2)
+        spikes = inhom_poiss(overall_dir, 2, dur_s, dt_s=dt_s, seed_2=seed_2)
         curr_phases = mean_phase(spikes, T, n_phase_bins, n_time_bins, times)
         curr_phases = curr_phases.reshape(-1, curr_phases.shape[-1]).T
         phases_1[idx, :] = curr_phases[0]
-        phases_2[idx:] = curr_phases[1]
+        phases_2[idx, :] = curr_phases[1]
     phases = np.vstack((phases_1, phases_2))
     return phases, rate_trajs, dt_s
     
+def gra_spike_to_phase (gra_spikes, seed_2s, T=0.1, dur_ms=2000):
+    dur_s = dur_ms/1000
+    time_bin_size = T
+    times = np.arange(0, dur_s+time_bin_size, time_bin_size) 
+    n_phase_bins = 360
+    n_time_bins = int(dur_s/time_bin_size)
+    bins_size_deg = 1
+    phases_1 = np.empty((len(seed_2s), n_time_bins*n_granule))
+    phases_2 = np.empty((len(seed_2s), n_time_bins*n_granule))
+    for idx, seed_2 in enumerate(seed_2s):
+        curr_phases = mean_phase(gra_spikes, T, n_phase_bins, n_time_bins, times)
+        curr_phases = curr_phases.reshape(-1, curr_phases.shape[-1]).T
+        phases_1[idx, :] = curr_phases[0]
+        phases_2[idx, :] = curr_phases[1]
+    phases = np.vstack((phases_1, phases_2))
+    return phases
+
+def pyDentate(input_grid_out, seed_2, n_traj, dur_ms):
+    savedir = os.getcwd()
+    input_scale = 1000
+    seed_3 = seed_2+150 #seed_3 for network generation & simulation
+    # Where to search for nrnmech.dll file. Must be adjusted for your machine.
+    dll_files = [("C:\\Users\\DanielM\\Repos\\models_dentate\\"
+                  "dentate_gyrus_Santhakumar2005_and_Yim_patterns\\"
+                  "dentategyrusnet2005\\nrnmech.dll"),
+                 "C:\\Users\\daniel\\Repos\\nrnmech.dll",
+                 ("C:\\Users\\Holger\\danielm\\models_dentate\\"
+                  "dentate_gyrus_Santhakumar2005_and_Yim_patterns\\"
+                  "dentategyrusnet2005\\nrnmech.dll"),
+                 ("C:\\Users\\Daniel\\repos\\"
+                  "dentate_gyrus_Santhakumar2005_and_Yim_patterns\\"
+                  "dentategyrusnet2005\\nrnmech.dll"),
+                  ("/home/baris/Python/mechs_7-6_linux/"
+                   "x86_64/.libs/libnrnmech.so")]
     
+    for x in dll_files:
+        if os.path.isfile(x):
+            dll_dir = x
+    print("DLL loaded from: " + dll_dir)
+    h.nrn_load_dll(dll_dir)
+    
+    #number of cells
+    n_grid = 200 
+    n_granule = 2000
+    n_mossy = 60
+    n_basket = 24
+    n_hipp = 24
+    
+    np.random.seed(seed_3) # seed_3 for connections in the network
+    
+    # Randomly choose target cells for the GridCell lines
+    gauss_gc = stats.norm(loc=1000, scale=input_scale)
+    gauss_bc = stats.norm(loc=12, scale=(input_scale/float(n_granule))*n_basket)
+    pdf_gc = gauss_gc.pdf(np.arange(n_granule))
+    pdf_gc = pdf_gc/pdf_gc.sum()
+    pdf_bc = gauss_bc.pdf(np.arange(n_basket))
+    pdf_bc = pdf_bc/pdf_bc.sum()
+    GC_indices = np.arange(n_granule)
+    start_idc = np.random.randint(0, n_granule-1, size=n_grid)
+    
+    PP_to_GCs = []
+    for x in start_idc:
+        curr_idc = np.concatenate((GC_indices[x:n_granule], GC_indices[0:x]))
+        PP_to_GCs.append(np.random.choice(curr_idc, size=100, replace=False,
+                                          p=pdf_gc))
+    
+    PP_to_GCs = np.array(PP_to_GCs)
+    
+    BC_indices = np.arange(n_basket)
+    start_idc = np.array(((start_idc/float(n_granule))*24), dtype=int)
+    
+    PP_to_BCs = []
+    for x in start_idc:
+        curr_idc = np.concatenate((BC_indices[x:24], BC_indices[0:x]))
+        PP_to_BCs.append(np.random.choice(curr_idc, size=1, replace=False,
+                                          p=pdf_bc))
+    PP_to_BCs = np.array(PP_to_BCs)
+    
+    # generate temporal patterns out of grid cell act profiles as an input for pyDentate
+    # input_grid_out = inhom_poiss(par_traj, n_traj, dt_s=0.0001, seed=seed_2)
+    
+    np.random.seed(seed_3) #seed_3 again for network generation & simulation
+    
+    granule_output = np.empty((n_granule, n_traj), dtype = np.ndarray)
+    mossy_output = np.empty((n_mossy, n_traj), dtype = np.ndarray)
+    basket_output = np.empty((n_basket, n_traj), dtype = np.ndarray)
+    hipp_output = np.empty((n_hipp, n_traj), dtype = np.ndarray)
+    
+    for trj in range(n_traj):
+        nw = net_tunedrev.TunedNetwork(seed_3, input_grid_out[:,trj], PP_to_GCs, PP_to_BCs)
+        # Attach voltage recordings to all cells
+        nw.populations[0].voltage_recording(range(n_granule))
+        nw.populations[1].voltage_recording(range(n_mossy))
+        nw.populations[2].voltage_recording(range(n_basket))
+        nw.populations[3].voltage_recording(range(n_hipp))
+        # Run the model
+        
+        """Initialization for -2000 to -100"""
+        h.cvode.active(0)
+        dt = 0.1
+        h.steps_per_ms = 1.0/dt
+        h.finitialize(-60)
+        h.t = -2000
+        h.secondorder = 0
+        h.dt = 10
+        while h.t < -100:
+            h.fadvance()
+            
+        h.secondorder = 2
+        h.t = 0
+        h.dt = 0.1
+        
+        """Setup run control for -100 to 1500"""
+        h.frecord_init()  # Necessary after changing t to restart the vectors
+        while h.t < dur_ms:
+            h.fadvance()
+        print("Done Running")
+        
+        granule_output[:,trj] =  np.array([cell[0].as_numpy() for cell in nw.populations[0].ap_counters])
+        mossy_output[:,trj] =  np.array([cell[0].as_numpy() for cell in nw.populations[1].ap_counters])
+        basket_output[:,trj] =  np.array([cell[0].as_numpy() for cell in nw.populations[2].ap_counters])
+        hipp_output[:,trj] =  np.array([cell[0].as_numpy() for cell in nw.populations[3].ap_counters])
+    
+    
+    return granule_output, mossy_output, basket_output, hipp_output
+
+

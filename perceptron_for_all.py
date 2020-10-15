@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep 10 17:13:01 2020
+Created on Fri Oct  9 15:37:41 2020
 
-@author: baris
+@author: bariskuru
 """
+
 
 import torch
 from torch.autograd import Variable
@@ -15,6 +16,7 @@ import seaborn as sns, numpy as np
 import matplotlib.pyplot as plt
 import os
 from rate_n_phase_codes import phase_code, spike_ct
+import time
 
 #BUILD THE NETWORK
 
@@ -86,6 +88,11 @@ ax3.set_title('Phase*Rate Code Perceptron Loss '+str(dur_ms)+'ms \n multip torch
 ax3.set_xlabel('Epochs')
 ax3.set_ylabel('RMSE Loss')
 
+fig4, ax4 = plt.subplots()
+ax4.set_title('Complex Phase&Rate Code Perceptron Loss '+str(dur_ms)+'ms \n multip torch seeds, learning rate = '+str(lr))
+ax4.set_xlabel('Epochs')
+ax4.set_ylabel('RMSE Loss')
+
 #Seeds: seed1 for grids, seed2 for poiss spikes, seed4 for network
 seed_1s = np.arange(100,120,1)
 seed_2s = np.arange(200,205,1)
@@ -101,12 +108,19 @@ phase_code_diff = np.empty((sample_size, inp_len, n_sampleset))
 rate_phase_code_sim = np.empty((sample_size, inp_len, n_sampleset))
 rate_phase_code_diff = np.empty((sample_size, inp_len, n_sampleset))
 
+
+complex_code_sim = np.empty((sample_size, 2*inp_len, n_sampleset))
+complex_code_diff = np.empty((sample_size, 2*inp_len, n_sampleset))
+
 rate_th_cross_sim = []
 rate_th_cross_diff = []
 phase_th_cross_sim = []
 phase_th_cross_diff = []
 rate_phase_th_cross_sim = []
 rate_phase_th_cross_diff = []
+
+complex_th_cross_sim = []
+complex_th_cross_diff = []
 
 #labels, output for training the network, 5 for each trajectory
 labels = torch.FloatTensor([[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],
@@ -118,7 +132,7 @@ out_len = labels.shape[1]
 # generate the grid data with different seeds
 # put them into phase and rate code funstions and collect the data for perceptron
 # generate the network with different seeds and plot the change in loss
-
+start = time.time()
 for idx, seed_4 in enumerate(seed_4s):
     #similar & distinct trajectories
     sim_traj = np.array([75, 74.5])
@@ -128,41 +142,68 @@ for idx, seed_4 in enumerate(seed_4s):
     phases_sim, rate_trajs_sim, dt_s = phase_code(sim_traj, dur_ms, seed_1s[idx], seed_2s)
     phases_diff, rate_trajs_diff, dt_s = phase_code(diff_traj, dur_ms, seed_1s[idx], seed_2s)
 
-    sim_traj_cts = spike_ct(rate_trajs_sim, dur_ms)
-    diff_traj_cts = spike_ct(rate_trajs_diff, dur_ms)
+    grid_sim_traj_cts, gra_sim_traj_cts, grid_sim_spikes, gra_sim_spikes = spike_ct(rate_trajs_sim, dur_ms)
+    grid_diff_traj_cts, gra_diff_traj_cts, grid_diff_spikes, gra_diff_spikes = spike_ct(rate_trajs_diff, dur_ms)
 
-    rate_phase_sim = sim_traj_cts*phases_sim
-    rate_phase_diff = diff_traj_cts*phases_diff
+    #granule cell phase code generation
+    
+    
+    
+    rate_phase_sim = grid_sim_traj_cts*phases_sim
+    rate_phase_diff = grid_diff_traj_cts*phases_diff
+    
+    
+    complex_sim_y = grid_sim_traj_cts*np.sin(phases_sim)
+    complex_sim_x = grid_sim_traj_cts*np.cos(phases_sim)
+    complex_sim = np.concatenate((complex_sim_y, complex_sim_x), axis=1)
+    complex_diff_y = grid_diff_traj_cts*np.sin(phases_diff)
+    complex_diff_x = grid_diff_traj_cts*np.cos(phases_diff)
+    complex_diff = np.concatenate((complex_diff_y, complex_diff_x), axis=1)
+    
+
+    
+    
     
     #Normalization
-    sim_traj_cts = sim_traj_cts/np.amax(sim_traj_cts)
-    diff_traj_cts = diff_traj_cts/np.amax(diff_traj_cts)
+    grid_sim_traj_cts = grid_sim_traj_cts/np.amax(grid_sim_traj_cts)
+    grid_diff_traj_cts = grid_diff_traj_cts/np.amax(grid_diff_traj_cts)
     phases_sim = phases_sim/np.amax(phases_sim)
     phases_diff = phases_diff/np.amax(phases_diff)
     rate_phase_sim = rate_phase_sim/np.amax(rate_phase_sim)
     rate_phase_diff = rate_phase_diff/np.amax(rate_phase_diff)
     
+    complex_sim = complex_sim/np.amax(complex_sim)
+    complex_diff = complex_diff/np.amax(complex_diff)
+    
     #fill arrays to save the data
-    rate_code_sim[:,:,idx] = sim_traj_cts
-    rate_code_diff[:,:,idx] = diff_traj_cts
+    rate_code_sim[:,:,idx] = grid_sim_traj_cts
+    rate_code_diff[:,:,idx] = grid_diff_traj_cts
     phase_code_sim[:,:,idx] = phases_sim
     phase_code_diff[:,:,idx] = phases_diff
     rate_phase_code_sim[:,:,idx] = rate_phase_sim
     rate_phase_code_diff[:,:,idx] = rate_phase_diff
+
+    complex_code_sim[:,:,idx] = complex_sim
+    complex_code_diff[:,:,idx] = complex_diff
     
     print('data done!')
 
     #Into tensor
-    rate_sim = torch.FloatTensor(sim_traj_cts)
-    rate_diff = torch.FloatTensor(diff_traj_cts)
+    rate_sim = torch.FloatTensor(grid_sim_traj_cts)
+    rate_diff = torch.FloatTensor(grid_diff_traj_cts)
     
     phase_sim = torch.FloatTensor(phases_sim)
     phase_diff = torch.FloatTensor(phases_diff)
 
     rate_phase_sim = torch.FloatTensor(rate_phase_sim)
     rate_phase_diff = torch.FloatTensor(rate_phase_diff)
+    
+    complex_sim = torch.FloatTensor(complex_sim)
+    complex_diff = torch.FloatTensor(complex_diff)
 
     #initate the network with diff types of inputs and plot the change in loss
+    
+    #rate code
     torch.manual_seed(seed_4)
     net_rate_sim = Net(inp_len, out_len)
     rate_train_loss_sim, rate_out_sim = train_net(net_rate_sim, rate_sim, labels, n_iter=n_iter, lr=lr)
@@ -180,7 +221,8 @@ for idx, seed_4 in enumerate(seed_4s):
         ax1.plot(rate_train_loss_diff, 'r-', label='75cm vs 60cm')
     else:
         ax1.plot(rate_train_loss_diff, 'r-')
-            
+        
+    #phase code        
     torch.manual_seed(seed_4)
     net_phase_sim = Net(inp_len, out_len)
     phase_train_loss_sim, out_sim = train_net(net_phase_sim, phase_sim, labels, n_iter=n_iter, lr=lr)
@@ -198,7 +240,8 @@ for idx, seed_4 in enumerate(seed_4s):
         ax2.plot(phase_train_loss_diff, 'r-', label='75cm vs 60cm')
     else:
         ax2.plot(phase_train_loss_diff, 'r-')
-        
+    
+    #rate*phase
     torch.manual_seed(seed_4)
     net_rate_phase_sim = Net(inp_len, out_len)
     rate_phase_train_loss_sim, rate_phase_out_sim = train_net(net_rate_phase_sim, rate_phase_sim, labels, n_iter=n_iter, lr=lr)
@@ -216,14 +259,36 @@ for idx, seed_4 in enumerate(seed_4s):
         ax3.plot(rate_phase_train_loss_diff, 'r-', label='75cm vs 60cm')
     else:
         ax3.plot(rate_phase_train_loss_diff, 'r-')
+        
+    #complex 
+    torch.manual_seed(seed_4)
+    net_complex_sim = Net(inp_len, out_len)
+    complex_train_loss_sim, complex_out_sim = train_net(net_complex_sim, complex_sim, labels, n_iter=n_iter, lr=lr)
+    complex_th_cross_sim.append(np.argmax(np.array(complex_train_loss_sim) < 0.2))
+    if seed_4 == seed_4s[0]:
+        ax4.plot(complex_train_loss_sim, 'b-', label='75cm vs 74.5cm')
+    else:
+        ax4.plot(complex_train_loss_sim, 'b-')
+        
+    torch.manual_seed(seed_4)
+    net_complex_diff = Net(inp_len, out_len)
+    complex_train_loss_diff, complex_out_diff = train_net(net_complex_diff, complex_diff, labels, n_iter=n_iter, lr=lr)
+    complex_th_cross_diff.append(np.argmax(np.array(complex_train_loss_diff) < 0.2))
+    if seed_4 == seed_4s[0]:
+        ax4.plot(complex_train_loss_diff, 'r-', label='75cm vs 60cm')
+    else:
+        ax4.plot(complex_train_loss_diff, 'r-')
+        
+        
 ax1.legend()
 ax2.legend()
 ax3.legend()
+ax4.legend()
 #add threshold line at 0.2
 ax1.plot(np.arange(0,n_iter), 0.2*np.ones(n_iter), '--g')
 ax2.plot(np.arange(0,n_iter), 0.2*np.ones(n_iter), '--g')
 ax3.plot(np.arange(0,n_iter), 0.2*np.ones(n_iter), '--g')
-
+ax4.plot(np.arange(0,n_iter), 0.2*np.ones(n_iter), '--g')
 
 # plt.annotate(str(th_cross_sim)+'\n'+str(th_cross_diff), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=9)
 fname = 'rate_n_phase_perceptron_norm_'+str(dur_ms)+'ms_'+str(n_iter)+'_iter_'+str(lr)+'_lr'
@@ -234,6 +299,8 @@ np.savez(fname,
          phase_code_diff = phase_code_diff,
          rate_phase_code_sim = rate_phase_code_sim,
          rate_phase_code_diff = rate_phase_code_diff,
+         complex_code_sim = complex_code_sim,
+         complex_code_diff = complex_code_diff,
         
          rate_th_cross_sim=rate_th_cross_sim, 
          rate_th_cross_diff=rate_th_cross_diff,
@@ -241,6 +308,8 @@ np.savez(fname,
          phase_th_cross_diff=phase_th_cross_diff,
          rate_phase_th_cross_diff=rate_phase_th_cross_diff, 
          rate_phase_th_cross_sim=rate_phase_th_cross_sim,
+         complex_th_cross_diff=complex_th_cross_diff, 
+         complex_th_cross_sim=complex_th_cross_sim,
         
          n_grid = n_grid, 
          max_rate = max_rate,
@@ -263,4 +332,11 @@ np.savez(fname,
          seed_2s = seed_2s,
          seed_4s = seed_4s)
 
+
+stop = time.time()
+print(stop-start)
+time_min = (stop-start)/60
+time_hour = time_min/60
+print(time_min)
+print(time_hour)
 

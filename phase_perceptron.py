@@ -24,7 +24,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(n_inp, n_out)
     def forward(self, x):
-        y = torch.relu(self.fc1(x))
+        y = torch.sigmoid(self.fc1(x))
         return y
 
 #TRAIN THE NETWORK
@@ -99,33 +99,47 @@ def spike_ct(trajs_pf):
 
 
 
+seed_2s = np.arange(200,205,1)
+phases_list_sim = phase_code([75, 74.5], seed_1s[idx], seed_2s)
+phases_List_diff = phase_code([75, 60], seed_1s[idx], seed_2s)
 
-phases_sim, spikes_sim = phase_code([75, 74.5])
-phases_diff, spikes_diff = phase_code([75, 60])
+phases_sim = phases_sim/360*2*np.pi
+phases_diff = phases_diff/360*2*np.pi
 
-
-
-
-lr = 1e-8
+lr = 1e-2
 n_iter = 500
-seed_4s = [0,1,2,3,4,5,6,7,8,9]
+seed_4s = [0,1,2,3,4]
 plt.figure()
 plt.title('Perceptron Learning Phase Code for Similar Trajectories\n multip torch seeds, learning rate = '+str(lr))
 plt.xlabel('Epochs')
 plt.ylabel('RMSE Loss')
 
 
-seed_1s = np.arange(100,110,1)
+seed_1s = np.arange(100,105,1)
 
 th_cross_sim = []
 th_cross_diff = []
 for idx, seed_4 in enumerate(seed_4s):
+    
+    
+    sim_traj = np.array([75, 74.5])
+    diff_traj = np.array([75, 60])
+    
+    data_sim = torch.FloatTensor(sim_traj_cts)
+    data_diff = torch.FloatTensor(diff_traj_cts)
+    
+    phases_sim, rate_trajs_sim, dt_s = phase_code(sim_traj, grids, spacings, seed_1s[idx], seed_2s)
+    phases_diff, rate_trajs_diff, dt_s = phase_code(diff_traj, grids, spacings, seed_1s[idx], seed_2s)
+
+    sim_traj_cts = spike_ct(rate_trajs_sim)
+    diff_traj_cts = spike_ct(rate_trajs_diff)
 
     data_sim = torch.FloatTensor(phases_sim)
 
-    labels = torch.FloatTensor([75,74.5]) 
+    labels = torch.FloatTensor([[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],
+                                [0, 1],[0, 1],[0, 1],[0, 1],[0, 1]]) 
     torch.manual_seed(seed_4)
-    net_sim = Net(4000,1)
+    net_sim = Net(4000,2)
     train_loss_sim, out_sim = train_net(net_sim, data_sim, labels, n_iter=n_iter, lr=lr)
     th_cross_sim.append(np.argmax(np.array(train_loss_sim) < 0.2))
     if seed_4 == seed_4s[0]:
@@ -134,6 +148,16 @@ for idx, seed_4 in enumerate(seed_4s):
         plt.plot(train_loss_sim, 'b-')
     if seed_4 == seed_4s[7]:
         print(out_sim)
+        
+    data_diff = torch.FloatTensor(phases_diff)
+    torch.manual_seed(seed_4)
+    net_diff = Net(4000,2)
+    train_loss_diff, out_diff = train_net(net_diff, data_diff, labels, n_iter=n_iter, lr=lr)
+    th_cross_diff.append(np.argmax(np.array(train_loss_diff) < 0.2))
+    if seed_4 == seed_4s[0]:
+        plt.plot(train_loss_diff, 'r-', label='75cm vs 60cm')
+    else:
+        plt.plot(train_loss_diff, 'r-')
 
 plt.legend()
 
