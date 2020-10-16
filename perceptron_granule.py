@@ -58,6 +58,7 @@ def train_net(net, train_data, train_labels, n_iter=1000, lr=1e-4):
 #Parametersfor the grid cell poisson input generation
 savedir = os.getcwd()
 n_grid = 200 
+n_gra = 2000
 max_rate = 20
 dur_ms = 200
 bin_size = 100
@@ -66,7 +67,7 @@ dur_s = dur_ms/1000
 speed_cm = 20
 field_size_cm = 100
 traj_size_cm = int(dur_s*speed_cm)
-inp_len = n_bin*n_grid
+inp_len = n_bin*n_gra
 
 #Parameters for perceptron
 lr = 1e-1
