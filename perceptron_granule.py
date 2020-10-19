@@ -15,7 +15,7 @@ from torch import optim
 import seaborn as sns, numpy as np
 import matplotlib.pyplot as plt
 import os
-from rate_n_phase_codes import phase_code, spike_ct
+from rate_n_phase_codes import phase_code, spike_ct, gra_spike_to_phase
 import time
 
 #BUILD THE NETWORK
@@ -140,15 +140,16 @@ for idx, seed_4 in enumerate(seed_4s):
     diff_traj = np.array([75, 60])
     
     #Input generation
-    phases_sim, rate_trajs_sim, dt_s = phase_code(sim_traj, dur_ms, seed_1s[idx], seed_2s)
-    phases_diff, rate_trajs_diff, dt_s = phase_code(diff_traj, dur_ms, seed_1s[idx], seed_2s)
+    _, rate_trajs_sim, dt_s = phase_code(sim_traj, dur_ms, seed_1s[idx], seed_2s)
+    _, rate_trajs_diff, dt_s = phase_code(diff_traj, dur_ms, seed_1s[idx], seed_2s)
 
     grid_sim_traj_cts, gra_sim_traj_cts, grid_sim_spikes, gra_sim_spikes = spike_ct(rate_trajs_sim, dur_ms)
     grid_diff_traj_cts, gra_diff_traj_cts, grid_diff_spikes, gra_diff_spikes = spike_ct(rate_trajs_diff, dur_ms)
 
     #granule cell phase code generation
     
-    
+    phases_sim = gra_spike_to_phase (gra_sim_spikes, seed_2s)
+    phases_diff = gra_spike_to_phase (gra_diff_spikes, seed_2s)
     
     rate_phase_sim = gra_sim_traj_cts*phases_sim
     rate_phase_diff = gra_diff_traj_cts*phases_diff
