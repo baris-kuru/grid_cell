@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 sns.set(context='paper',style='whitegrid',palette='colorblind', font='Arial',font_scale=1.5,color_codes=True)
 
 
+
+
 load = np.load('rate_n_phase_perceptron_norm_200ms_10000_iter_0.1_lr.npz', allow_pickle=True) 
 load2 = np.load('complex_rate_n_phase_perceptron_norm_200ms_10000_iter_0.1_lr.npz', allow_pickle=True)
 
@@ -55,27 +57,71 @@ rate_diff_sd = np.array([0.13558053179918558, 0.1592256235398166, 0.230186177280
 
 
 
-data_sim = np.vstack((rate_th_cross_sim, phase_th_cross_sim, 
-                  rate_phase_th_cross_sim, complex_th_sim)).T
-data_diff = np.vstack((rate_th_cross_diff, phase_th_cross_diff, 
-                  rate_phase_th_cross_diff, complex_th_diff)).T
+rate_th_cross_sim = 1/np.array([6485, 6292, 6652])
+mean_rate_sim = np.mean(rate_th_cross_sim)
+sd_rate_sim = np.std(rate_th_cross_sim)
+phase_th_cross_sim = 1/np.array([663, 661, 709])
+mean_phase_sim = np.mean(phase_th_cross_sim)
+sd_phase_sim = np.std(phase_th_cross_sim)
+complex_th_cross_sim = 1/np.array([1717, 2581, 2715])
+mean_complex_sim = np.mean(complex_th_cross_sim)
+sd_complex_sim = np.std(complex_th_cross_sim)
+
+rate_th_cross_diff = 1/np.array([2693, 1314, 2839])
+mean_rate_diff = np.mean(rate_th_cross_diff)
+sd_rate_diff = np.std(rate_th_cross_diff)
+phase_th_cross_diff = 1/np.array([289, 313, 316])
+mean_phase_diff= np.mean(phase_th_cross_diff)
+sd_phase_diff = np.std(phase_th_cross_diff)
+complex_th_cross_diff = 1/np.array([877, 1234, 1035])
+mean_complex_diff = np.mean(complex_th_cross_diff)
+sd_complex_diff = np.std(complex_th_cross_diff)
+
+means_sim = np.vstack((mean_rate_sim, mean_phase_sim, mean_complex_sim ))
+sds_sim= np.vstack((sd_rate_sim, sd_phase_sim, sd_complex_sim ))
+means_diff= np.vstack ((mean_rate_diff,mean_phase_diff, mean_complex_diff))
+sds_diff = np.vstack((sd_rate_diff, mean_phase_diff, mean_complex_diff))
+data_sim = np.vstack((rate_th_cross_sim, phase_th_cross_sim, complex_th_sim)).T
+data_diff = np.vstack((rate_th_cross_diff, phase_th_cross_diff, complex_th_diff)).T
+
+xaxis = np.arange(1,4,1)
+plt.errorbar(xaxis, means_sim, yerr=sds_sim, fmt='-', capsize=4, label='75cm vs 74.5cm')
+plt.errorbar(xaxis, means_diff, yerr=sds_diff, fmt='-', capsize=4, label='75cm vs 60cm')
+plt.title('Mean Learning Speeds in 2000ms')
+plt.ylabel('Mean Speed ($1/N_E$)')
+plt.xticks([1, 2, 3], ['rate', 'phase', 'complex'])
+plt.legend()
+
+parameters = ('lr = $10^{-4}$, Error Bars = SD, 3 Grid seeds, 5 Poisson seeds,'+ 
+              '  $N_E$ = number of epochs until RMSE reached a threshold of 0.2')
+plt.annotate(parameters, (0,0), (0, -30), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=12)
+
 
 ax = sns.swarmplot(data=data_sim)
-plt.title('Perceptron Learning Speed | Similar | 200ms ')
+plt.title('Perceptron Learning Speed | Similar Traj | 2000ms ')
 plt.ylabel('Speed ($1/N_E$)')
-plt.xticks([0, 1, 2, 3], ['rate code', 'phase code', 'rate*phase code', 'complex code'])
-parameters = ('learning rate = $10^{-1}$ \n 20 seeds for grid & network generation'+ 
-              ', 5 Poisson seeds \n $N_E$ = number of epochs until RMSE reached a threshold of 0.2')
+plt.xticks([0, 1, 2], ['rate code', 'phase code', 'complex code'])
+parameters = ('learning rate = 5* $10^{-3}$ , 3 grid seeds'+ 
+              ', 5 Poisson seeds, $N_E$ = number of epochs until RMSE reached a threshold of 0.2')
 plt.annotate(parameters, (0,0), (0, -30), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=12)
 
 plt.figure()
 ax2 = sns.swarmplot(data=data_diff)
-plt.title('Perceptron Learning Speed | Dissimilar | 200ms ')
+plt.title('Perceptron Learning Speed | Distinct Traj | 2000ms ')
 plt.ylabel('Speed ($1/N_E$)')
-plt.xticks([0, 1, 2, 3], ['rate code', 'phase code', 'rate*phase code', 'complex code'])
-parameters = ('learning rate = $10^{-1}$ \n 20 seeds for grid & network generation'+ 
-              ', 5 Poisson seeds \n $N_E$ = number of epochs until RMSE reached a threshold of 0.2')
+plt.xticks([0, 1, 2], ['rate code', 'phase code', 'complex code'])
+parameters = ('learning rate = 5* $10^{-3}$ , 3 grid seeds'+ 
+              ', 5 Poisson seeds, $N_E$ = number of epochs until RMSE reached a threshold of 0.2')
 plt.annotate(parameters, (0,0), (0, -30), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=12)
+
+
+
+
+
+
+
+
+
 
 
 
