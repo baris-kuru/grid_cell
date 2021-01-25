@@ -65,7 +65,7 @@ pp_weight=9e-4
 
 #Seeds
 grid_seeds = 510
-poiss_seeds = np.arange(200,201,1)
+poiss_seeds = np.arange(200,205,1)
 perc_seeds = grid_seeds-100
 
 n_poiss = poiss_seeds.shape[0]

@@ -138,7 +138,7 @@ net_rate_phase_sim.parameters().data
 
 count = 0
 
-for i in grid_spikes_sim[0][:,0]:
+for i in grid_spikes_sim[0][:,1]:
     # np.warnings.filterwarnings('ignore')
     if i.size != 0 and np.sum(i>50)>0:
         # print(i)
@@ -234,21 +234,102 @@ np.savez('granule_rate_n_phase_perceptron_2000ms_net-seeds_410-419',
          complex_code_sim = complex_code_sim,
          complex_code_diff = complex_code_diff)
 
-a = np.array([1,2,3])
-b = np.array([2,3,4])
-c = np.array([3,4,5])
-d= np.array([4,5,6])
 
-e = []
-e.append(a)
-e.append(b)
-e.append(c)
-e.append(d)
+import glob
+import numpy as np
+npzfiles = []
+grid_rate_code =[]
+grid_phase_code =[]
+grid_complex_code =[]
+grid_th_cross = []
+gra_rate_code = []
+gra_phase_code= []
+gra_complex_code= []
+gra_th_cross= []
+for file in glob.glob("*.npz"):
+    npzfiles.append(file)
+    load = np.load(file, allow_pickle=True)
+    grid_rate_code.append(load['grid_rate_code'])
+    grid_phase_code.append(load['grid_phase_code'])
+    grid_complex_code.append(load['grid_complex_code'])
+    grid_th_cross.append(load['grid_th_cross'])
+    gra_rate_code.append(load['gra_rate_code'])
+    gra_phase_code.append(load['gra_phase_code'])
+    gra_complex_code.append(load['gra_complex_code'])
+    gra_th_cross.append(load['gra_th_cross'])
+    
+np.savez('rate_n_phase_codes_perceptron_500ms_net-seeds_410-419', 
+         grid_rate_code = grid_rate_code,
+         grid_phase_code = grid_phase_code,
+         grid_complex_code = grid_complex_code,
+         grid_th_cross = grid_th_cross,
+         
+         gra_rate_code = gra_rate_code,
+         gra_phase_code = gra_phase_code,
+         gra_complex_code = gra_complex_code,
+         gra_th_cross = gra_th_cross)
 
-e = np.array(e)
-e
+
 
 
 loaded = np.load('granule_rate_n_phase_perceptron_net-seeds_419_417_416.npz', allow_pickle=True)
 
-l
+
+fig, ax = plt.subplots()
+ax.plot(rate_code_sim[], alpha=0.3)
+ax.plot(phase_code_sim, alpha=0.3)
+ax.plot(complex_code_sim, alpha=0.3)
+ax.legend(("Rate", "Phase", "Complex"))
+
+plt.plot(rate_code_diff[0,0,:])
+plt.figure()
+plt.plot(rate_code_diff[0,1,:])
+plt.figure()
+plt.plot(rate_code_diff[0,2,:])
+plt.figure()
+plt.plot(rate_code_diff[2,0,:])
+
+
+pear1 = pearsonr(rate_code_diff[1,0,:], rate_code_sim[1,5,:])[0]
+pear2 = pearsonr(rate_code_diff[2,0,:], rate_code_diff[5,5,:])[0]
+pear2
+
+np.mean()
+pear3 = pearsonr(rate_code_diff[0,0,:], rate_code_diff[4,0,:])[0]
+pear4 = pearsonr(rate_code_diff[0,0,:], rate_code_diff[0,6,:])[0]
+
+
+grids = range(9)
+poissons = range(5)
+#75vs75
+mat = []
+for grid in grids:
+    for poiss in poissons:
+        pr = pearsonr(complex_code_sim[grid,poiss,:], complex_code_sim[grid+1,poiss,:])[0]
+        mat.append(pr)
+print(np.mean(mat))
+
+#75vs74.5
+mat1 = []
+for grid in grids:
+    for poiss in poissons:
+        pr = pearsonr(complex_code_sim[grid,poiss,:], complex_code_sim[grid+1,poiss+5,:])[0]
+        mat1.append(pr)
+print(np.mean(mat1))
+
+#75vs60
+mat2 = []
+for grid in grids:
+    for poiss in poissons:
+        pr = pearsonr(complex_code_sim[grid,poiss,:], complex_code_diff[grid+1,poiss+5,:])[0]
+        mat2.append(pr)
+    
+np.mean(mat2)
+
+
+loaded = np.load('rate_n_phase_perceptron_net-seed410_2000ms.npz', allow_pickle=True)
+
+
+
+
+
